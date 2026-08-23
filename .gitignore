@@ -1,0 +1,26 @@
+# Generated/private material
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Never commit Windows/LINE/runtime binaries
+*.exe
+*.dll
+*.msi
+*.msix
+*.appx
+*.zip
+*.7z
+*.tar.xz
+*.tar.gz
+
+# Local test state
+.cache/
+.state/
+*.log
+
+# Editors
+.idea/
+.vscode/

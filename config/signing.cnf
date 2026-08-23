@@ -1,0 +1,19 @@
+[req]
+prompt = no
+default_md = sha256
+default_bits = 2048
+distinguished_name = dn
+x509_extensions = v3_req
+
+[dn]
+C = US
+ST = Washington
+L = Redmond
+O = Microsoft Corporation
+CN = Microsoft Windows
+
+[v3_req]
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = microsoft.com

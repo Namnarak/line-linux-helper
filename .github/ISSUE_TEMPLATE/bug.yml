@@ -1,0 +1,35 @@
+name: Compatibility bug
+about: Report an install, launch, update or repair problem
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not attach LINE binaries, Windows DLLs, credentials, QR codes, or private signing keys.
+  - type: textarea
+    id: doctor
+    attributes:
+      label: line-linux doctor output
+      description: Paste the full output of `line-linux doctor`.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Distribution
+      placeholder: CachyOS / Ubuntu 26.04 / Fedora ...
+    validations:
+      required: true
+  - type: input
+    id: desktop
+    attributes:
+      label: Desktop/session
+      placeholder: KDE Plasma 6 / Wayland + XWayland
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Exact error and reproduction steps
+    validations:
+      required: true

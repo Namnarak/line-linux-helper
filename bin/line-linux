@@ -1,0 +1,177 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SELF=$(readlink -f "${BASH_SOURCE[0]}")
+BIN_DIR=$(dirname "$SELF")
+ROOT_DIR=$(cd "$BIN_DIR/.." && pwd)
+SIGNING_CONFIG="$ROOT_DIR/config/signing.cnf"
+
+# shellcheck source=../config/manifest.sh
+source "$ROOT_DIR/config/manifest.sh"
+# shellcheck source=../lib/common.sh
+source "$ROOT_DIR/lib/common.sh"
+# shellcheck source=../lib/distro.sh
+source "$ROOT_DIR/lib/distro.sh"
+# shellcheck source=../lib/runner.sh
+source "$ROOT_DIR/lib/runner.sh"
+# shellcheck source=../lib/signing.sh
+source "$ROOT_DIR/lib/signing.sh"
+# shellcheck source=../lib/line_app.sh
+source "$ROOT_DIR/lib/line_app.sh"
+# shellcheck source=../lib/desktop.sh
+source "$ROOT_DIR/lib/desktop.sh"
+# shellcheck source=../lib/doctor.sh
+source "$ROOT_DIR/lib/doctor.sh"
+
+usage() {
+  cat <<'USAGE'
+line-linux-helper — unofficial LINE-on-Linux setup helper
+
+Usage:
+  line-linux install [--dry-run] [--no-packages] [--no-desktop] [--prefix PATH]
+  line-linux launch [--prefix PATH]
+  line-linux update [--prefix PATH]
+  line-linux repair [--no-packages] [--prefix PATH]
+  line-linux doctor [--prefix PATH]
+  line-linux uninstall [--yes]
+  line-linux disclaimer
+  line-linux version
+
+This project is NOT an official LINE installer and is not affiliated with
+LY Corporation or LINE. It does not bundle, redistribute, decode, decompile,
+patch, or modify LINE binaries. LINE is downloaded at runtime from LINE's
+own official CDN. The helper only prepares an isolated Wine environment.
+USAGE
+}
+
+show_disclaimer() {
+  cat <<'EOF2'
+DISCLAIMER
+==========
+This is an unofficial community compatibility/setup helper for running the
+Windows edition of LINE on Linux through Wine.
+
+It is NOT an official LINE installer and is not affiliated with, endorsed by,
+or supported by LY Corporation, LINE, Microsoft, WineHQ, or Kron4ek.
+
+This project DOES NOT bundle, mirror, redistribute, decode, decompile,
+reverse-engineer, patch, or modify LINE binaries. The official LINE bootstrap
+installer is downloaded directly from LINE's CDN at installation time.
+
+The compatibility workaround modifies only Wine DLL files inside a dedicated
+LINE Wine prefix by adding a locally generated self-signed Authenticode
+signature. The certificate is generated on the user's own machine. It is NOT
+issued by Microsoft even though compatibility metadata resembles Windows
+system signing metadata required by current LINE validation behavior.
+
+Use at your own risk. LINE or Wine updates may break this workaround.
+EOF2
+}
+
+parse_common_flags() {
+  while (($#)); do
+    case "$1" in
+      --dry-run) DRY_RUN=1 ;;
+      --no-packages) NO_PACKAGES=1 ;;
+      --no-desktop) NO_DESKTOP=1 ;;
+      --prefix)
+        shift
+        (($#)) || die "--prefix requires a path"
+        PREFIX=$(readlink -m "$1")
+        ;;
+      --prefix=*) PREFIX=$(readlink -m "${1#*=}") ;;
+      --yes|-y) ASSUME_YES=1 ;;
+      -h|--help) usage; exit 0 ;;
+      *) die "Unknown option: $1" ;;
+    esac
+    shift
+  done
+}
+
+check_base_commands() {
+  local c
+  for c in curl sha256sum tar openssl git cmake winetricks; do
+    need_cmd "$c"
+  done
+}
+
+cmd_install() {
+  is_x86_64 || die "Only x86_64 Linux is currently supported by this compatibility profile"
+  show_disclaimer
+  printf '\n'
+  ensure_dirs
+  install_dependencies
+  [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
+  ensure_runner
+  ensure_prefix
+  install_fonts
+  sign_wine_dlls
+  install_line
+  [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
+  printf '\n'
+  log "Installation complete"
+  info "Launch with: line-linux launch"
+  info "Check health with: line-linux doctor"
+}
+
+cmd_repair() {
+  is_x86_64 || die "Only x86_64 Linux is currently supported"
+  ensure_dirs
+  install_dependencies
+  [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
+  ensure_runner
+  ensure_prefix
+  install_fonts
+  sign_wine_dlls
+  [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
+  log "Repair complete"
+}
+
+cmd_update() {
+  ensure_dirs
+  ensure_runner
+  [[ -f "$PREFIX/system.reg" ]] || die "Wine prefix not found. Run: line-linux install"
+  sign_wine_dlls
+  install_line
+  install_desktop_entry
+  log "LINE update/reinstall complete"
+}
+
+cmd_uninstall() {
+  local yes=${ASSUME_YES:-0}
+  if [[ $yes != 1 ]]; then
+    printf 'This will remove the isolated LINE prefix and helper data:\n  %s\nContinue? [y/N] ' "$APP_HOME"
+    read -r answer
+    [[ "$answer" =~ ^[Yy]$ ]] || { info "Cancelled"; return 0; }
+  fi
+
+  if [[ -x "$RUNNERS_HOME/$RUNNER_NAME/bin/wineserver" && -f "$PREFIX/system.reg" ]]; then
+    env WINEPREFIX="$PREFIX" "$RUNNERS_HOME/$RUNNER_NAME/bin/wineserver" -k >/dev/null 2>&1 || true
+  fi
+  rm -f "$DESKTOP_HOME/line-linux-helper.desktop" "$ICON_HOME/line-linux-helper.png"
+  rm -rf "$APP_HOME"
+  rm -f "$BIN_HOME/line-linux"
+  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DESKTOP_HOME" >/dev/null 2>&1 || true
+  log "Uninstalled line-linux-helper and its isolated LINE prefix"
+}
+
+COMMAND=${1:-help}
+shift || true
+DRY_RUN=0
+NO_PACKAGES=0
+NO_DESKTOP=0
+ASSUME_YES=0
+parse_common_flags "$@"
+
+case "$COMMAND" in
+  install) cmd_install ;;
+  launch) launch_line ;;
+  update) cmd_update ;;
+  repair) cmd_repair ;;
+  doctor) doctor_line ;;
+  uninstall) cmd_uninstall ;;
+  disclaimer) show_disclaimer ;;
+  version) printf 'line-linux-helper 0.1.0\ncompat-runner=%s\n' "$RUNNER_VERSION" ;;
+  help|-h|--help) usage ;;
+  *) usage; die "Unknown command: $COMMAND" ;;
+esac
