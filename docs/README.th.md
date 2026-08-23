@@ -86,3 +86,14 @@ line-linux uninstall
 ## Disclaimer สั้นสำหรับแชร์โพสต์
 
 > LINE Linux Helper เป็น community compatibility/setup helper ที่ไม่เป็นทางการ ไม่ได้เป็นผลิตภัณฑ์หรือ installer ของ LINE/LY Corporation และไม่มีการ bundle, mirror, decode, decompile, reverse-engineer หรือ patch ตัว LINE โปรแกรมจะดาวน์โหลด LINE Windows Installer จาก CDN ทางการของ LINE โดยตรงขณะติดตั้ง ส่วน workaround ทั้งหมดทำเฉพาะใน Wine prefix แยกของผู้ใช้
+
+
+## แก้ฟอนต์/การเรนเดอร์ตัวอักษร
+
+ถ้า LINE เปิดได้แต่ตัวอักษรบาง แตก หรือภาษาไทย fallback ไม่สวย ให้รัน:
+
+```bash
+line-linux repair --fonts
+```
+
+คำสั่งนี้ตั้งค่า RGB font smoothing, gamma 1400, DPI 96 และใช้ Noto Sans / Noto Sans Thai เป็น fallback โดยไม่เก็บหรือแจกไฟล์ฟอนต์ไว้ใน repository

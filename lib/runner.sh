@@ -77,11 +77,3 @@ ensure_prefix() {
   run mkdir -p "$PREFIX"
   run env WINEPREFIX="$PREFIX" WINEARCH=win64 WINEDEBUG=-all "$RUNNER_BIN/wineboot" -u
 }
-
-install_fonts() {
-  RUNNER_BIN="$RUNNERS_HOME/$RUNNER_NAME/bin"
-  wine_env
-  log "Installing CJK/font fallback with winetricks"
-  run env WINEPREFIX="$PREFIX" WINEARCH=win64 WINE="$RUNNER_BIN/wine" WINESERVER="$RUNNER_BIN/wineserver" \
-    winetricks -q cjkfonts
-}

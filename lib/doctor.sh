@@ -59,6 +59,26 @@ doctor_line() {
     printf '%-24s %s\n' 'Compatibility signature:' 'UNKNOWN (verifier unavailable)'
   fi
 
+  if font_profile_status; then
+    printf '%-24s %s\n' 'Font rendering profile:' 'RGB / gamma 1400 / 96 DPI'
+  else
+    printf '%-24s %s\n' 'Font rendering profile:' 'MISSING / REPAIR NEEDED'
+    failures=$((failures + 1))
+  fi
+
+  if command -v fc-match >/dev/null 2>&1; then
+    local thai_family
+    thai_family=$(fc-match -f '%{family}' 'Noto Sans Thai' 2>/dev/null | head -1 || true)
+    if [[ "$thai_family" == *'Noto Sans Thai'* ]]; then
+      printf '%-24s %s\n' 'Thai font fallback:' "$thai_family"
+    else
+      printf '%-24s %s\n' 'Thai font fallback:' 'Noto Sans Thai not found'
+      failures=$((failures + 1))
+    fi
+  else
+    printf '%-24s %s\n' 'Thai font fallback:' 'UNKNOWN (fontconfig missing)'
+  fi
+
   local prefix_running=0 proc cmd
   for proc in /proc/[0-9]*; do
     [[ -r "$proc/environ" && -r "$proc/cmdline" ]] || continue

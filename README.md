@@ -25,7 +25,7 @@ Reason: NO_SIGNATURE
 2. Downloads a pinned Kron4ek Wine Proton runner from its upstream GitHub release.
 3. Verifies the runner SHA-256 before using it.
 4. Creates a dedicated 64-bit Wine prefix only for LINE.
-5. Installs CJK/font fallback support.
+5. Installs Noto/Thai host fallbacks plus CJK fallback and applies an RGB font-rendering profile (96 DPI, gamma 1400).
 6. Generates a local self-signed compatibility certificate on the user's machine.
 7. Adds Authenticode signatures to Wine DLLs inside that isolated prefix.
 8. Downloads `LineInst.exe` directly from `desktop.line-scdn.net`.
@@ -48,6 +48,7 @@ After installation:
 line-linux launch
 line-linux doctor
 line-linux repair
+line-linux repair --fonts   # repair font rendering only
 line-linux update
 ```
 
@@ -131,6 +132,18 @@ The default is:
 - It does **not** install Wine DLL modifications globally.
 - It does **not** claim the local compatibility certificate was issued by Microsoft.
 - It does **not** guarantee calling/video/notification features unsupported by Wine will work forever.
+
+### Font rendering
+
+The helper also fixes common Wine font-rendering problems seen in LINE:
+
+- installs the distro Noto Sans / Noto Sans Thai family when available,
+- installs CJK fallback through Winetricks,
+- enables RGB subpixel smoothing (gamma 1400),
+- pins the Wine DPI profile to 96 DPI, and
+- maps missing Windows UI families such as Segoe UI, Tahoma and Leelawadee UI to Noto fallbacks.
+
+No font files are stored in this repository. Host fonts come from the Linux distribution and CJK fallback is retrieved by Winetricks. Run `line-linux repair --fonts` after changing the Wine runner or if text becomes thin, jagged, or has poor Thai fallback.
 
 ## Security model
 

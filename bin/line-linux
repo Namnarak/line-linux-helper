@@ -17,6 +17,8 @@ source "$ROOT_DIR/lib/distro.sh"
 source "$ROOT_DIR/lib/runner.sh"
 # shellcheck source=../lib/signing.sh
 source "$ROOT_DIR/lib/signing.sh"
+# shellcheck source=../lib/fonts.sh
+source "$ROOT_DIR/lib/fonts.sh"
 # shellcheck source=../lib/line_app.sh
 source "$ROOT_DIR/lib/line_app.sh"
 # shellcheck source=../lib/desktop.sh
@@ -32,7 +34,7 @@ Usage:
   line-linux install [--dry-run] [--no-packages] [--no-desktop] [--prefix PATH]
   line-linux launch [--prefix PATH]
   line-linux update [--prefix PATH]
-  line-linux repair [--no-packages] [--prefix PATH]
+  line-linux repair [--fonts] [--no-packages] [--prefix PATH]
   line-linux doctor [--prefix PATH]
   line-linux uninstall [--yes]
   line-linux disclaimer
@@ -81,6 +83,7 @@ parse_common_flags() {
         PREFIX=$(readlink -m "$1")
         ;;
       --prefix=*) PREFIX=$(readlink -m "${1#*=}") ;;
+      --fonts) FONTS_ONLY=1 ;;
       --yes|-y) ASSUME_YES=1 ;;
       -h|--help) usage; exit 0 ;;
       *) die "Unknown option: $1" ;;
@@ -105,7 +108,7 @@ cmd_install() {
   [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
   ensure_runner
   ensure_prefix
-  install_fonts
+  apply_font_profile
   sign_wine_dlls
   install_line
   [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
@@ -122,7 +125,11 @@ cmd_repair() {
   [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
   ensure_runner
   ensure_prefix
-  install_fonts
+  apply_font_profile
+  if [[ ${FONTS_ONLY:-0} == 1 ]]; then
+    log "Font repair complete. Restart LINE to apply the new rendering profile."
+    return 0
+  fi
   sign_wine_dlls
   [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
   log "Repair complete"
@@ -164,6 +171,7 @@ DRY_RUN=0
 NO_PACKAGES=0
 NO_DESKTOP=0
 ASSUME_YES=0
+FONTS_ONLY=0
 parse_common_flags "$@"
 
 case "$COMMAND" in
@@ -174,7 +182,7 @@ case "$COMMAND" in
   doctor) doctor_line ;;
   uninstall) cmd_uninstall ;;
   disclaimer) show_disclaimer ;;
-  version) printf 'line-linux-helper 0.1.1\ncompat-runner=%s\n' "$RUNNER_VERSION" ;;
+  version) printf 'line-linux-helper 0.1.2\ncompat-runner=%s\n' "$RUNNER_VERSION" ;;
   help|-h|--help) usage ;;
   *) usage; die "Unknown command: $COMMAND" ;;
 esac

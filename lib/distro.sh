@@ -34,20 +34,32 @@ install_dependencies() {
 
   case "$DISTRO_FAMILY" in
     arch)
-      run as_root pacman -S --needed --noconfirm curl ca-certificates tar xz openssl winetricks git cmake make gcc pkgconf
+      run as_root pacman -S --needed --noconfirm curl ca-certificates tar xz openssl winetricks git cmake make gcc pkgconf fontconfig
+      if ! run as_root pacman -S --needed --noconfirm noto-fonts; then
+        warn "Could not install noto-fonts automatically; Thai/UI fallback may look worse."
+      fi
       ;;
     debian)
       run as_root apt-get update
-      run as_root apt-get install -y curl ca-certificates tar xz-utils openssl winetricks git cmake build-essential pkg-config libssl-dev
+      run as_root apt-get install -y curl ca-certificates tar xz-utils openssl winetricks git cmake build-essential pkg-config libssl-dev fontconfig
+      if ! run as_root apt-get install -y fonts-noto-core; then
+        warn "Could not install fonts-noto-core automatically; Thai/UI fallback may look worse."
+      fi
       ;;
     fedora)
-      run as_root dnf install -y curl ca-certificates tar xz openssl winetricks git cmake gcc make pkgconf-pkg-config openssl-devel
+      run as_root dnf install -y curl ca-certificates tar xz openssl winetricks git cmake gcc make pkgconf-pkg-config openssl-devel fontconfig
+      if ! run as_root dnf install -y google-noto-sans-fonts google-noto-sans-thai-fonts; then
+        warn "Could not install Noto Sans/Thai automatically; Thai/UI fallback may look worse."
+      fi
       ;;
     opensuse)
-      run as_root zypper --non-interactive install curl ca-certificates tar xz openssl winetricks git cmake gcc make pkg-config libopenssl-devel
+      run as_root zypper --non-interactive install curl ca-certificates tar xz openssl winetricks git cmake gcc make pkg-config libopenssl-devel fontconfig
+      if ! run as_root zypper --non-interactive install google-noto-fonts; then
+        warn "Could not install google-noto-fonts automatically; install a Noto Sans + Thai package manually if available."
+      fi
       ;;
     *)
-      warn "Unsupported package manager. Install these manually: curl tar xz openssl winetricks git cmake C compiler pkg-config OpenSSL development headers"
+      warn "Unsupported package manager. Install these manually: curl tar xz openssl winetricks git cmake C compiler pkg-config fontconfig Noto Sans/Thai fonts OpenSSL development headers"
       ;;
   esac
 }
