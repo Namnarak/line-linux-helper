@@ -16,6 +16,12 @@ cd line-linux-helper
 ./install.sh
 ```
 
+หรือแบบคำสั่งเดียว (โหลดเฉพาะ source ของ helper จาก GitHub ส่วน LINE ยังโหลดตรงจาก CDN ของ LINE):
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/Namnarak/line-linux-helper/main/bootstrap.sh)
+```
+
 หลังติดตั้ง:
 
 ```bash

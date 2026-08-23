@@ -40,14 +40,29 @@ sign_one_dll() {
   return 1
 }
 
-verify_critical_signatures() {
+critical_signatures_ok() {
   local critical=(crypt32.dll winhttp.dll version.dll)
-  local dll
+  local dll path
   for dll in "${critical[@]}"; do
-    local path="$PREFIX/drive_c/windows/system32/$dll"
-    [[ -f "$path" ]] || die "Critical Wine DLL missing: $path"
-    has_compat_signature "$path" || die "Critical Wine DLL was not signed successfully: $dll"
+    path="$PREFIX/drive_c/windows/system32/$dll"
+    [[ -f "$path" ]] || return 1
+    has_compat_signature "$path" || return 1
   done
+}
+
+verify_critical_signatures() {
+  critical_signatures_ok || die "One or more critical Wine DLL compatibility signatures are missing or invalid"
+}
+
+signing_marker_path() { printf '%s/.line-linux-signing-profile-%s' "$PREFIX" "$SIGNING_PROFILE_VERSION"; }
+
+signing_is_current() {
+  local marker
+  marker=$(signing_marker_path)
+  [[ -f "$marker" ]] || return 1
+  critical_signatures_ok || return 1
+  ! find "$PREFIX/drive_c/windows/system32" "$PREFIX/drive_c/windows/syswow64" \
+      -type f -iname '*.dll' -newer "$marker" -print -quit 2>/dev/null | grep -q .
 }
 
 sign_wine_dlls() {
@@ -57,6 +72,10 @@ sign_wine_dlls() {
   fi
   ensure_osslsigncode
   generate_compat_certificate
+  if signing_is_current; then
+    info "Wine DLL compatibility signatures are already current"
+    return 0
+  fi
 
   local failed_log="$CACHE_HOME/signing-failures.txt"
   : > "$failed_log"
@@ -81,6 +100,7 @@ sign_wine_dlls() {
   printf '\n'
 
   verify_critical_signatures
+  touch "$(signing_marker_path)"
   log "DLL signing complete: signed=$ok already=$skip legacy/unsupported=$fail total=$total"
   (( fail > 0 )) && info "Non-critical signing failures are listed in: $failed_log"
 }

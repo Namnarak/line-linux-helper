@@ -9,11 +9,14 @@ for script in "${scripts[@]}"; do
 done
 
 tests/no-bundled-binaries.sh
+tests/logic.sh
 
 if command -v shellcheck >/dev/null 2>&1; then
-  shellcheck -x install.sh uninstall.sh bin/line-linux lib/*.sh tests/*.sh
+  shellcheck -x install.sh uninstall.sh bootstrap.sh bin/line-linux lib/*.sh tests/*.sh
 else
   echo 'INFO: shellcheck not installed; syntax/no-binary checks still passed.'
 fi
 
 echo 'Smoke tests passed.'
+
+grep -q 'HELPER_VERSION="0.2.0"' config/manifest.sh || { echo "Missing helper version" >&2; exit 1; }

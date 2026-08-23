@@ -1,3 +1,8 @@
+HELPER_VERSION="0.2.0"
+SIGNING_PROFILE_VERSION="2"
+FONT_PROFILE_VERSION="2"
+CJK_PROFILE_VERSION="1"
+
 # Pinned compatibility profile. Update only after testing.
 RUNNER_NAME="wine-proton-11.0-1-amd64"
 RUNNER_VERSION="11.0-1"

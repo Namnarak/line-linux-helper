@@ -36,6 +36,7 @@ Usage:
   line-linux update [--prefix PATH]
   line-linux repair [--fonts] [--no-packages] [--prefix PATH]
   line-linux doctor [--prefix PATH]
+  line-linux status [--prefix PATH]
   line-linux uninstall [--yes]
   line-linux disclaimer
   line-linux version
@@ -104,6 +105,7 @@ cmd_install() {
   show_disclaimer
   printf '\n'
   ensure_dirs
+  acquire_operation_lock
   install_dependencies
   [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
   ensure_runner
@@ -112,6 +114,7 @@ cmd_install() {
   sign_wine_dlls
   install_line
   [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
+  write_helper_state
   printf '\n'
   log "Installation complete"
   info "Launch with: line-linux launch"
@@ -121,31 +124,37 @@ cmd_install() {
 cmd_repair() {
   is_x86_64 || die "Only x86_64 Linux is currently supported"
   ensure_dirs
+  acquire_operation_lock
   install_dependencies
   [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
   ensure_runner
   ensure_prefix
   apply_font_profile
   if [[ ${FONTS_ONLY:-0} == 1 ]]; then
+    write_helper_state
     log "Font repair complete. Restart LINE to apply the new rendering profile."
     return 0
   fi
   sign_wine_dlls
   [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
+  write_helper_state
   log "Repair complete"
 }
 
 cmd_update() {
   ensure_dirs
+  acquire_operation_lock
   ensure_runner
   [[ -f "$PREFIX/system.reg" ]] || die "Wine prefix not found. Run: line-linux install"
   sign_wine_dlls
   install_line
   install_desktop_entry
+  write_helper_state
   log "LINE update/reinstall complete"
 }
 
 cmd_uninstall() {
+  acquire_operation_lock
   local yes=${ASSUME_YES:-0}
   if [[ $yes != 1 ]]; then
     printf 'This will remove the isolated LINE prefix and helper data:\n  %s\nContinue? [y/N] ' "$APP_HOME"
@@ -182,7 +191,8 @@ case "$COMMAND" in
   doctor) doctor_line ;;
   uninstall) cmd_uninstall ;;
   disclaimer) show_disclaimer ;;
-  version) printf 'line-linux-helper 0.1.2\ncompat-runner=%s\n' "$RUNNER_VERSION" ;;
+  version|-v|--version) printf 'line-linux-helper %s\ncompat-runner=%s\n' "$HELPER_VERSION" "$RUNNER_VERSION" ;;
+  status) doctor_line ;;
   help|-h|--help) usage ;;
   *) usage; die "Unknown command: $COMMAND" ;;
 esac

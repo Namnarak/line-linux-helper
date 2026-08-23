@@ -9,6 +9,8 @@ doctor_line() {
   printf '%-24s %s\n' 'Architecture:' "$(uname -m)"
   printf '%-24s %s\n' 'Session:' "${XDG_SESSION_TYPE:-unknown}"
   printf '%-24s %s\n' 'DISPLAY:' "${DISPLAY:-none}"
+  printf '%-24s %s\n' 'Helper version:' "$HELPER_VERSION"
+  printf '%-24s %s\n' 'Compatibility profile:' "sign=$SIGNING_PROFILE_VERSION font=$FONT_PROFILE_VERSION cjk=$CJK_PROFILE_VERSION"
   printf '%-24s %s\n' 'Prefix:' "$PREFIX"
 
   RUNNER_BIN="$RUNNERS_HOME/$RUNNER_NAME/bin"
@@ -32,6 +34,7 @@ doctor_line() {
   if [[ -n "$launcher" && -n "$exe" ]]; then
     printf '%-24s %s\n' 'LINE installation:' 'FOUND'
     printf '%-24s %s\n' 'LINE executable:' "$exe"
+    printf '%-24s %s\n' 'LINE version:' "$(line_version 2>/dev/null || echo unknown)"
   else
     printf '%-24s %s\n' 'LINE installation:' 'NOT FOUND'
     failures=$((failures + 1))

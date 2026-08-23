@@ -7,11 +7,16 @@ apply_font_profile() {
   log "Applying LINE font rendering profile (Noto fallback + RGB smoothing + 96 DPI)"
 
   # Source Han Sans/Unifont provide reliable CJK fallback inside the prefix.
-  # Thai and general UI glyphs are provided by the distro Noto packages and
-  # exposed to Wine through fontconfig.
-  run env WINEPREFIX="$PREFIX" WINEARCH=win64 \
-    WINE="$RUNNER_BIN/wine" WINESERVER="$RUNNER_BIN/wineserver" \
-    winetricks -q cjkfonts
+  # Avoid rerunning the relatively slow Winetricks font registration on every repair.
+  local cjk_marker="$PREFIX/.line-linux-cjk-fonts-$CJK_PROFILE_VERSION"
+  if [[ ! -f "$cjk_marker" ]]; then
+    run env WINEPREFIX="$PREFIX" WINEARCH=win64 \
+      WINE="$RUNNER_BIN/wine" WINESERVER="$RUNNER_BIN/wineserver" \
+      winetricks -q cjkfonts
+    [[ ${DRY_RUN:-0} == 1 ]] || touch "$cjk_marker"
+  else
+    info "CJK fallback profile is already installed"
+  fi
 
   if [[ ${DRY_RUN:-0} == 1 ]]; then
     info "Would configure RGB font smoothing, 96 DPI and Wine font replacements"
@@ -19,6 +24,17 @@ apply_font_profile() {
   fi
 
   local wine="$RUNNER_BIN/wine"
+  local latin_ui='Noto Sans' metric_sans='Noto Sans' thai_ui='Noto Sans'
+  if command -v fc-match >/dev/null 2>&1; then
+    local family
+    family=$(fc-match -f '%{family}' 'Noto Sans' 2>/dev/null | head -1 || true)
+    [[ "$family" == *'Noto Sans'* ]] && latin_ui='Noto Sans'
+    family=$(fc-match -f '%{family}' 'Liberation Sans' 2>/dev/null | head -1 || true)
+    [[ "$family" == *'Liberation Sans'* ]] && metric_sans='Liberation Sans'
+    family=$(fc-match -f '%{family}' 'Noto Sans Thai' 2>/dev/null | head -1 || true)
+    [[ "$family" == *'Noto Sans Thai'* ]] && thai_ui='Noto Sans Thai'
+  fi
+  info "Font families: UI=$latin_ui, metric-sans=$metric_sans, Thai=$thai_ui"
 
   # Equivalent to Winetricks fontsmooth=rgb, kept inline so repair does not
   # depend on the verb implementation changing between winetricks releases.
@@ -37,27 +53,29 @@ apply_font_profile() {
   # missing. We do not copy or redistribute font files; Wine resolves these
   # host-installed OFL fonts through fontconfig.
   local replacements='HKCU\Software\Wine\Fonts\Replacements'
-  "$wine" reg add "$replacements" /v 'Segoe UI' /t REG_SZ /d 'Noto Sans' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Segoe UI Variable' /t REG_SZ /d 'Noto Sans' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Segoe UI Semibold' /t REG_SZ /d 'Noto Sans' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Tahoma' /t REG_SZ /d 'Noto Sans' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Arial' /t REG_SZ /d 'Noto Sans' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Arial Unicode MS' /t REG_SZ /d 'Noto Sans' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Microsoft Sans Serif' /t REG_SZ /d 'Noto Sans' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Leelawadee UI' /t REG_SZ /d 'Noto Sans Thai' /f >/dev/null
-  "$wine" reg add "$replacements" /v 'Leelawadee UI Semilight' /t REG_SZ /d 'Noto Sans Thai' /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Segoe UI' /t REG_SZ /d "$latin_ui" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Segoe UI Variable' /t REG_SZ /d "$latin_ui" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Segoe UI Semibold' /t REG_SZ /d "$latin_ui" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Tahoma' /t REG_SZ /d "$latin_ui" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Arial' /t REG_SZ /d "$metric_sans" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Arial Unicode MS' /t REG_SZ /d "$latin_ui" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Microsoft Sans Serif' /t REG_SZ /d "$metric_sans" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Leelawadee UI' /t REG_SZ /d "$thai_ui" /f >/dev/null
+  "$wine" reg add "$replacements" /v 'Leelawadee UI Semilight' /t REG_SZ /d "$thai_ui" /f >/dev/null
 
   # These Wine X11 switches improve GDI client-side antialiasing under XWayland.
   local x11='HKCU\Software\Wine\X11 Driver'
   "$wine" reg add "$x11" /v ClientSideAntiAliasWithCore /t REG_SZ /d Y /f >/dev/null
   "$wine" reg add "$x11" /v ClientSideAntiAliasWithRender /t REG_SZ /d Y /f >/dev/null
 
+  touch "$PREFIX/.line-linux-font-profile-$FONT_PROFILE_VERSION"
   log "Font profile applied"
 }
 
 font_profile_status() {
   RUNNER_BIN="$RUNNERS_HOME/$RUNNER_NAME/bin"
   [[ -x "$RUNNER_BIN/wine" && -f "$PREFIX/system.reg" ]] || return 1
+  [[ -f "$PREFIX/.line-linux-font-profile-$FONT_PROFILE_VERSION" ]] || return 1
 
   local wine="$RUNNER_BIN/wine" type gamma dpi
   type=$(WINEPREFIX="$PREFIX" "$wine" reg query 'HKCU\Control Panel\Desktop' /v FontSmoothingType 2>/dev/null | awk '/FontSmoothingType/{print $NF}' | tr -d '\r' | tail -1)

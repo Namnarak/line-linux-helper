@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0 — 2026-08-23
+
+- Add operation locking to prevent concurrent install/update/repair corruption.
+- Make DLL signing and CJK font repair incremental for much faster repeated repairs.
+- Add helper and detected LINE versions to `doctor`.
+- Add Liberation Sans as a metric-compatible Arial fallback while keeping Noto Sans/Thai for UI glyph coverage.
+- Expand build dependencies for local `osslsigncode` compilation across distro families.
+- Add optional one-command GitHub source bootstrap; LINE binaries are still fetched only from LINE's official CDN.
+- Preserve the no-bundled-binaries/private-key CI policy.
+
 ## 0.1.1 — 2026-08-23
 
 - Fix ShellCheck/CI issues in the initial release.

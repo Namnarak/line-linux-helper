@@ -75,3 +75,52 @@ find_line_launcher() {
 find_line_exe() {
   find "$PREFIX/drive_c/users" -type f -path '*/AppData/Local/LINE/bin/current/LINE.exe' -print -quit 2>/dev/null || true
 }
+
+
+acquire_operation_lock() {
+  [[ ${DRY_RUN:-0} == 1 ]] && return 0
+  local lock="$APP_HOME/.operation.lock" owner=''
+  if ! mkdir "$lock" 2>/dev/null; then
+    [[ -r "$lock/pid" ]] && owner=$(cat "$lock/pid" 2>/dev/null || true)
+    if [[ "$owner" =~ ^[0-9]+$ ]] && ! kill -0 "$owner" 2>/dev/null; then
+      warn "Removing stale operation lock from PID $owner"
+      rm -rf "$lock"
+      mkdir "$lock" || die "Cannot acquire operation lock: $lock"
+    else
+      die "Another install/update/repair operation is already running${owner:+ (PID $owner)}"
+    fi
+  fi
+  printf '%s\n' "$$" > "$lock/pid"
+  OPERATION_LOCK="$lock"
+  trap 'release_operation_lock' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM HUP
+}
+
+release_operation_lock() {
+  if [[ -n ${OPERATION_LOCK:-} && -d ${OPERATION_LOCK:-} ]]; then
+    rm -rf "$OPERATION_LOCK"
+  fi
+  OPERATION_LOCK=''
+}
+
+line_version() {
+  local ini
+  ini=$(find "$PREFIX/drive_c/users" -type f -path '*/AppData/Local/LINE/Data/LINE.ini' -print -quit 2>/dev/null || true)
+  [[ -n "$ini" ]] || return 1
+  awk -F= '/^last_updated_version=/{gsub(/\r/,"",$2); print $2; exit}' "$ini"
+}
+
+write_helper_state() {
+  [[ ${DRY_RUN:-0} == 1 ]] && return 0
+  local version='unknown'
+  version=$(line_version 2>/dev/null || true)
+  cat > "$APP_HOME/state.env" <<STATE
+helper_version=$HELPER_VERSION
+runner_version=$RUNNER_VERSION
+signing_profile=$SIGNING_PROFILE_VERSION
+font_profile=$FONT_PROFILE_VERSION
+line_version=${version:-unknown}
+updated_at=$(date -Is)
+STATE
+}
