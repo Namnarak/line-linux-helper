@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1 — 2026-08-23
+
+- Fix CI ShellCheck annotations in the new logic test.
+- No compatibility-profile change from 0.2.0.
+
 ## 0.2.0 — 2026-08-23
 
 - Add operation locking to prevent concurrent install/update/repair corruption.

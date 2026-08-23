@@ -19,4 +19,4 @@ fi
 
 echo 'Smoke tests passed.'
 
-grep -q 'HELPER_VERSION="0.2.0"' config/manifest.sh || { echo "Missing helper version" >&2; exit 1; }
+grep -q 'HELPER_VERSION="0.2.1"' config/manifest.sh || { echo "Missing helper version" >&2; exit 1; }
