@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034
 
 : "${APP_NAME:=line-linux-helper}"
 : "${APP_HOME:=${XDG_DATA_HOME:-$HOME/.local/share}/$APP_NAME}"

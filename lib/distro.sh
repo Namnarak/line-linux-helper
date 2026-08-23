@@ -7,13 +7,18 @@ detect_distro() {
   DISTRO_ID=${ID:-unknown}
   DISTRO_LIKE=${ID_LIKE:-}
 
-  case " $DISTRO_ID $DISTRO_LIKE " in
-    *" arch "*|*" cachyos "*|*" manjaro "*|*|*" endeavouros "*) DISTRO_FAMILY=arch ;;
-    *" debian "*|*" ubuntu "*|*" linuxmint "*|*" pop "*) DISTRO_FAMILY=debian ;;
-    *" fedora "*|*" rhel "*|*" nobara "*) DISTRO_FAMILY=fedora ;;
-    *" opensuse "*|*" suse "*) DISTRO_FAMILY=opensuse ;;
-    *) DISTRO_FAMILY=unknown ;;
-  esac
+  local distro_words=" $DISTRO_ID $DISTRO_LIKE "
+  if [[ "$distro_words" == *" arch "* || "$distro_words" == *" cachyos "* || "$distro_words" == *" manjaro "* || "$distro_words" == *" endeavouros "* ]]; then
+    DISTRO_FAMILY=arch
+  elif [[ "$distro_words" == *" debian "* || "$distro_words" == *" ubuntu "* || "$distro_words" == *" linuxmint "* || "$distro_words" == *" pop "* ]]; then
+    DISTRO_FAMILY=debian
+  elif [[ "$distro_words" == *" fedora "* || "$distro_words" == *" rhel "* || "$distro_words" == *" nobara "* ]]; then
+    DISTRO_FAMILY=fedora
+  elif [[ "$distro_words" == *" opensuse "* || "$distro_words" == *" suse "* ]]; then
+    DISTRO_FAMILY=opensuse
+  else
+    DISTRO_FAMILY=unknown
+  fi
 }
 
 install_dependencies() {

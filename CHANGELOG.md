@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 — 2026-08-23
+
+- Fix ShellCheck/CI issues in the initial release.
+- Improve distro-family detection and desktop-cache handling.
+- Confirm full rendered LINE UI in the CachyOS KDE/Wayland smoke test.
+- Strengthen signature verification by checking Authenticode digest equality.
+
 ## 0.1.0 — 2026-08-23
 
 - Initial public release.

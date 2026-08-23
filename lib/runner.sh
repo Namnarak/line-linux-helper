@@ -62,7 +62,7 @@ ensure_runner() {
     rm -rf "$temp"
     RUNNER_BIN="$runner_dir/bin"
     [[ -x "$RUNNER_BIN/wine" ]] || die "Runner installation failed"
-    log "Runner installed: $($RUNNER_BIN/wine --version)"
+    log "Runner installed: $("$RUNNER_BIN/wine" --version)"
   fi
 }
 

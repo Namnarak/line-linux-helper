@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2034,SC1091
 set -euo pipefail
 
 SELF=$(readlink -f "${BASH_SOURCE[0]}")
@@ -151,7 +152,9 @@ cmd_uninstall() {
   rm -f "$DESKTOP_HOME/line-linux-helper.desktop" "$ICON_HOME/line-linux-helper.png"
   rm -rf "$APP_HOME"
   rm -f "$BIN_HOME/line-linux"
-  command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$DESKTOP_HOME" >/dev/null 2>&1 || true
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "$DESKTOP_HOME" >/dev/null 2>&1 || true
+  fi
   log "Uninstalled line-linux-helper and its isolated LINE prefix"
 }
 
@@ -171,7 +174,7 @@ case "$COMMAND" in
   doctor) doctor_line ;;
   uninstall) cmd_uninstall ;;
   disclaimer) show_disclaimer ;;
-  version) printf 'line-linux-helper 0.1.0\ncompat-runner=%s\n' "$RUNNER_VERSION" ;;
+  version) printf 'line-linux-helper 0.1.1\ncompat-runner=%s\n' "$RUNNER_VERSION" ;;
   help|-h|--help) usage ;;
   *) usage; die "Unknown command: $COMMAND" ;;
 esac

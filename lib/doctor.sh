@@ -13,7 +13,7 @@ doctor_line() {
 
   RUNNER_BIN="$RUNNERS_HOME/$RUNNER_NAME/bin"
   if [[ -x "$RUNNER_BIN/wine" ]]; then
-    printf '%-24s %s\n' 'Runner:' "$($RUNNER_BIN/wine --version 2>/dev/null || echo present)"
+    printf '%-24s %s\n' 'Runner:' "$("$RUNNER_BIN/wine" --version 2>/dev/null || echo present)"
   else
     printf '%-24s %s\n' 'Runner:' 'MISSING'
     failures=$((failures + 1))
