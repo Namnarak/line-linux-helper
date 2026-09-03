@@ -90,7 +90,7 @@ ensure_runner() {
 ensure_prefix() {
   RUNNER_BIN="$RUNNERS_HOME/$RUNNER_NAME/bin"
   wine_env
-  PREFIX_RUNTIME_CHANGED=0
+  export PREFIX_RUNTIME_CHANGED=0
   local marker
   marker=$(runner_marker_path)
 
@@ -100,7 +100,7 @@ ensure_prefix() {
     run env WINEPREFIX="$PREFIX" WINEARCH=win64 WINEDEBUG=-all "$RUNNER_BIN/wineboot" -u
     if [[ ${DRY_RUN:-0} != 1 ]]; then
       touch "$marker"
-      PREFIX_RUNTIME_CHANGED=1
+      export PREFIX_RUNTIME_CHANGED=1
     fi
     return 0
   fi
@@ -118,7 +118,7 @@ ensure_prefix() {
     find "$PREFIX" -maxdepth 1 -type f -name '.line-linux-runtime-*' -delete 2>/dev/null || true
     find "$PREFIX" -maxdepth 1 -type f -name '.line-linux-signing-profile-*' -delete 2>/dev/null || true
     touch "$marker"
-    PREFIX_RUNTIME_CHANGED=1
+    export PREFIX_RUNTIME_CHANGED=1
   fi
   log "Prefix runtime migration complete"
 }
