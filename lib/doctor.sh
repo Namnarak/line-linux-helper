@@ -29,6 +29,12 @@ doctor_line() {
 
   if [[ -f "$PREFIX/system.reg" ]]; then
     printf '%-26s %s\n' 'Wine prefix:' 'OK'
+    if [[ -f "$(runner_marker_path)" ]]; then
+      printf '%-26s %s\n' 'Prefix/runtime match:' 'OK'
+    else
+      printf '%-26s %s\n' 'Prefix/runtime match:' 'MISMATCH / REPAIR NEEDED'
+      failures=$((failures + 1))
+    fi
   else
     printf '%-26s %s\n' 'Wine prefix:' 'MISSING'
     failures=$((failures + 1))
