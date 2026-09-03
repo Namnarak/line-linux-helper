@@ -15,6 +15,8 @@ source "$ROOT_DIR/lib/common.sh"
 source "$ROOT_DIR/lib/distro.sh"
 # shellcheck source=../lib/runner.sh
 source "$ROOT_DIR/lib/runner.sh"
+# shellcheck source=../lib/graphics.sh
+source "$ROOT_DIR/lib/graphics.sh"
 # shellcheck source=../lib/signing.sh
 source "$ROOT_DIR/lib/signing.sh"
 # shellcheck source=../lib/fonts.sh
@@ -34,17 +36,23 @@ Usage:
   line-linux install [--dry-run] [--no-packages] [--no-desktop] [--prefix PATH]
   line-linux launch [--prefix PATH]
   line-linux update [--prefix PATH]
-  line-linux repair [--fonts] [--no-packages] [--prefix PATH]
+  line-linux repair [--fonts|--graphics|--signatures] [--no-packages] [--prefix PATH]
   line-linux doctor [--prefix PATH]
+  line-linux graphics [--prefix PATH]
   line-linux status [--prefix PATH]
   line-linux uninstall [--yes]
   line-linux disclaimer
   line-linux version
 
-This project is NOT an official LINE installer and is not affiliated with
-LY Corporation or LINE. It does not bundle, redistribute, decode, decompile,
-patch, or modify LINE binaries. LINE is downloaded at runtime from LINE's
-own official CDN. The helper only prepares an isolated Wine environment.
+Stable v0.3 profile:
+  Runtime: Wine Staging (pinned WoW64 build)
+  Display: X11/XWayland
+  Graphics: WineD3D + OpenGL
+
+Environment overrides are intentionally limited in v0.3:
+  LINE_DISPLAY_BACKEND=xwayland
+  LINE_GRAPHICS_BACKEND=wined3d
+  LINE_WINED3D_RENDERER=gl
 USAGE
 }
 
@@ -84,7 +92,9 @@ parse_common_flags() {
         PREFIX=$(readlink -m "$1")
         ;;
       --prefix=*) PREFIX=$(readlink -m "${1#*=}") ;;
-      --fonts) FONTS_ONLY=1 ;;
+      --fonts) REPAIR_MODE=fonts ;;
+      --graphics) REPAIR_MODE=graphics ;;
+      --signatures) REPAIR_MODE=signatures ;;
       --yes|-y) ASSUME_YES=1 ;;
       -h|--help) usage; exit 0 ;;
       *) die "Unknown option: $1" ;;
@@ -95,21 +105,28 @@ parse_common_flags() {
 
 check_base_commands() {
   local c
-  for c in curl sha256sum tar openssl git cmake winetricks; do
+  for c in curl sha256sum tar openssl git cmake winetricks cabextract; do
     need_cmd "$c"
   done
 }
 
-cmd_install() {
+prepare_runtime() {
   is_x86_64 || die "Only x86_64 Linux is currently supported by this compatibility profile"
-  show_disclaimer
-  printf '\n'
+  validate_runtime_config
   ensure_dirs
-  acquire_operation_lock
   install_dependencies
   [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
   ensure_runner
   ensure_prefix
+}
+
+cmd_install() {
+  show_disclaimer
+  printf '\n'
+  ensure_dirs
+  acquire_operation_lock
+  prepare_runtime
+  apply_graphics_profile
   apply_font_profile
   sign_wine_dlls
   install_line
@@ -122,30 +139,48 @@ cmd_install() {
 }
 
 cmd_repair() {
-  is_x86_64 || die "Only x86_64 Linux is currently supported"
   ensure_dirs
   acquire_operation_lock
-  install_dependencies
-  [[ ${DRY_RUN:-0} == 1 ]] || check_base_commands
-  ensure_runner
-  ensure_prefix
-  apply_font_profile
-  if [[ ${FONTS_ONLY:-0} == 1 ]]; then
-    write_helper_state
-    log "Font repair complete. Restart LINE to apply the new rendering profile."
-    return 0
+  prepare_runtime
+
+  if [[ ${PREFIX_RUNTIME_CHANGED:-0} == 1 && "$REPAIR_MODE" != all ]]; then
+    warn "Wine runtime changed; performing a full compatibility refresh instead of a partial repair"
+    REPAIR_MODE=all
   fi
-  sign_wine_dlls
-  [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
+
+  case "$REPAIR_MODE" in
+    fonts)
+      apply_font_profile
+      log "Font repair complete. Restart LINE to apply the profile."
+      ;;
+    graphics)
+      apply_graphics_profile
+      log "Graphics profile repair complete."
+      ;;
+    signatures)
+      sign_wine_dlls
+      log "Compatibility signature repair complete."
+      ;;
+    all)
+      apply_graphics_profile
+      apply_font_profile
+      sign_wine_dlls
+      [[ ${NO_DESKTOP:-0} == 1 ]] || install_desktop_entry
+      log "Repair complete"
+      ;;
+  esac
   write_helper_state
-  log "Repair complete"
 }
 
 cmd_update() {
   ensure_dirs
   acquire_operation_lock
+  validate_runtime_config
   ensure_runner
   [[ -f "$PREFIX/system.reg" ]] || die "Wine prefix not found. Run: line-linux install"
+  ensure_prefix
+  apply_graphics_profile
+  apply_font_profile
   sign_wine_dlls
   install_line
   install_desktop_entry
@@ -166,7 +201,7 @@ cmd_uninstall() {
     env WINEPREFIX="$PREFIX" "$RUNNERS_HOME/$RUNNER_NAME/bin/wineserver" -k >/dev/null 2>&1 || true
   fi
   rm -f "$DESKTOP_HOME/line-linux-helper.desktop" "$ICON_HOME/line-linux-helper.png"
-  rm -rf "$APP_HOME"
+  rm -rf "$APP_HOME" "$STATE_HOME"
   rm -f "$BIN_HOME/line-linux"
   if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "$DESKTOP_HOME" >/dev/null 2>&1 || true
@@ -180,19 +215,23 @@ DRY_RUN=0
 NO_PACKAGES=0
 NO_DESKTOP=0
 ASSUME_YES=0
-FONTS_ONLY=0
+REPAIR_MODE=all
 parse_common_flags "$@"
 
 case "$COMMAND" in
   install) cmd_install ;;
-  launch) launch_line ;;
+  launch) validate_runtime_config; launch_line ;;
   update) cmd_update ;;
   repair) cmd_repair ;;
-  doctor) doctor_line ;;
+  doctor) validate_runtime_config; doctor_line ;;
+  graphics) validate_runtime_config; graphics_doctor ;;
   uninstall) cmd_uninstall ;;
   disclaimer) show_disclaimer ;;
-  version|-v|--version) printf 'line-linux-helper %s\ncompat-runner=%s\n' "$HELPER_VERSION" "$RUNNER_VERSION" ;;
-  status) doctor_line ;;
+  version|-v|--version)
+    printf 'line-linux-helper %s\nruntime=%s\nrunner=%s\nrenderer=%s/%s\n' \
+      "$HELPER_VERSION" "$RUNTIME_FAMILY" "$RUNNER_VERSION" "$GRAPHICS_BACKEND" "$WINED3D_RENDERER"
+    ;;
+  status) validate_runtime_config; doctor_line ;;
   help|-h|--help) usage ;;
   *) usage; die "Unknown command: $COMMAND" ;;
 esac

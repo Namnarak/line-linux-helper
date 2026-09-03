@@ -1,13 +1,21 @@
-HELPER_VERSION="0.2.1"
+HELPER_VERSION="0.3.0"
 SIGNING_PROFILE_VERSION="2"
 FONT_PROFILE_VERSION="2"
 CJK_PROFILE_VERSION="1"
+GRAPHICS_PROFILE_VERSION="1"
 
-# Pinned compatibility profile. Update only after testing.
-RUNNER_NAME="wine-proton-11.0-1-amd64"
-RUNNER_VERSION="11.0-1"
-RUNNER_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/proton-11.0-1/wine-proton-11.0-1-amd64.tar.xz"
-RUNNER_SHA256="270dcbc3fdea9a19f1b60caed99fd8040639fb4626c69d424d0efdb12eb67b9f"
+# Pinned compatibility runtime. This is Wine Staging, not Proton.
+# The amd64-wow64 build avoids requiring 32-bit host libraries for WoW64 apps.
+RUNTIME_FAMILY="wine-staging"
+RUNNER_NAME="wine-11.16-staging-amd64-wow64"
+RUNNER_VERSION="11.16"
+RUNNER_URL="https://github.com/Kron4ek/Wine-Builds/releases/download/11.16/wine-11.16-staging-amd64-wow64.tar.xz"
+RUNNER_SHA256="746d3d571e474a7a603e084a0d35649699c3d5c98e5ea3e9994e1e5fa693af92"
+
+# Conservative graphics profile: X11/XWayland + WineD3D OpenGL.
+DISPLAY_BACKEND_DEFAULT="xwayland"
+GRAPHICS_BACKEND_DEFAULT="wined3d"
+WINED3D_RENDERER_DEFAULT="gl"
 
 # Official LINE bootstrap installer. No LINE binary is stored in this repository.
 LINE_INSTALLER_URL="https://desktop.line-scdn.net/win/new/LineInst.exe"

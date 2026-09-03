@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.3.0 — 2026-09-03
+
+- Replace the Proton-derived compatibility runner with pinned **Wine Staging 11.16**.
+- Switch to Kron4ek's `amd64-wow64` build to reduce reliance on 32-bit host libraries.
+- Add runtime migration markers; an existing prefix is upgraded with `wineboot -u` when the pinned runner changes.
+- Invalidate compatibility-signature markers after runtime migration so replaced Wine DLLs are re-signed.
+- Add an explicit stable graphics profile: **X11/XWayland + WineD3D + OpenGL**.
+- Add `line-linux graphics` diagnostics with host OpenGL/software-renderer detection when `glxinfo` is available.
+- Add runner linkage checks for obviously missing host libraries.
+- Add component repair modes: `--fonts`, `--graphics`, and `--signatures`.
+- Promote targeted repair to a full repair automatically when a Wine runtime migration is detected.
+- Improve dependency setup with `cabextract`, `unzip`, best-effort graphics diagnostics packages, and packaged `osslsigncode` when available.
+- Expand persisted state with runtime and graphics profile information.
+- Keep DXVK and native Wine Wayland out of the stable profile until separately tested.
+
 ## 0.2.1 — 2026-08-23
 
 - Fix CI ShellCheck annotations in the new logic test.

@@ -17,6 +17,7 @@ else
   echo 'INFO: shellcheck not installed; syntax/no-binary checks still passed.'
 fi
 
-echo 'Smoke tests passed.'
+grep -q 'HELPER_VERSION="0.3.0"' config/manifest.sh || { echo "Missing helper version" >&2; exit 1; }
+grep -q 'RUNTIME_FAMILY="wine-staging"' config/manifest.sh || { echo "Expected Wine Staging runtime" >&2; exit 1; }
 
-grep -q 'HELPER_VERSION="0.2.1"' config/manifest.sh || { echo "Missing helper version" >&2; exit 1; }
+echo 'Smoke tests passed.'

@@ -27,17 +27,37 @@ ensure_osslsigncode() {
   run chmod 0755 "$OSSLSIGNCODE"
 }
 
+runner_marker_path() {
+  printf '%s/.line-linux-runtime-%s' "$PREFIX" "$RUNNER_NAME"
+}
+
+check_runner_dependencies() {
+  local wine="$RUNNER_BIN/wine"
+  [[ -x "$wine" ]] || return 1
+  command -v ldd >/dev/null 2>&1 || return 0
+
+  local missing
+  missing=$(ldd "$wine" 2>/dev/null | awk '/not found/{print $1}' || true)
+  if [[ -n "$missing" ]]; then
+    warn "Wine runtime is missing host libraries:"
+    while IFS= read -r lib; do warn "  $lib"; done <<<"$missing"
+    return 1
+  fi
+  return 0
+}
+
 ensure_runner() {
   local runner_dir="$RUNNERS_HOME/$RUNNER_NAME"
   local archive="$CACHE_HOME/$RUNNER_NAME.tar.xz"
   RUNNER_BIN="$runner_dir/bin"
 
   if [[ -x "$RUNNER_BIN/wine" && -x "$RUNNER_BIN/wineserver" ]]; then
-    info "Wine runner already installed: $runner_dir"
+    info "Wine Staging runner already installed: $runner_dir"
+    check_runner_dependencies || die "Wine runtime dependencies are incomplete"
     return 0
   fi
 
-  log "Downloading pinned Kron4ek Wine Proton $RUNNER_VERSION"
+  log "Downloading pinned Wine Staging $RUNNER_VERSION (WoW64)"
   run curl --proto '=https' --tlsv1.2 -fL --retry 3 --connect-timeout 15 \
     "$RUNNER_URL" -o "$archive"
 
@@ -61,7 +81,8 @@ ensure_runner() {
     mv "$root" "$runner_dir"
     rm -rf "$temp"
     RUNNER_BIN="$runner_dir/bin"
-    [[ -x "$RUNNER_BIN/wine" ]] || die "Runner installation failed"
+    [[ -x "$RUNNER_BIN/wine" && -x "$RUNNER_BIN/wineserver" ]] || die "Runner installation failed"
+    check_runner_dependencies || die "Wine runtime dependencies are incomplete"
     log "Runner installed: $("$RUNNER_BIN/wine" --version)"
   fi
 }
@@ -69,11 +90,35 @@ ensure_runner() {
 ensure_prefix() {
   RUNNER_BIN="$RUNNERS_HOME/$RUNNER_NAME/bin"
   wine_env
-  if [[ -f "$PREFIX/system.reg" ]]; then
-    info "Wine prefix already exists: $PREFIX"
+  export PREFIX_RUNTIME_CHANGED=0
+  local marker
+  marker=$(runner_marker_path)
+
+  if [[ ! -f "$PREFIX/system.reg" ]]; then
+    log "Creating isolated 64-bit Wine prefix: $PREFIX"
+    run mkdir -p "$PREFIX"
+    run env WINEPREFIX="$PREFIX" WINEARCH=win64 WINEDEBUG=-all "$RUNNER_BIN/wineboot" -u
+    if [[ ${DRY_RUN:-0} != 1 ]]; then
+      touch "$marker"
+      export PREFIX_RUNTIME_CHANGED=1
+    fi
     return 0
   fi
-  log "Creating isolated 64-bit Wine prefix: $PREFIX"
-  run mkdir -p "$PREFIX"
+
+  if [[ -f "$marker" ]]; then
+    info "Wine prefix already matches runtime: $RUNNER_VERSION"
+    return 0
+  fi
+
+  log "Migrating existing LINE prefix to Wine Staging $RUNNER_VERSION"
+  run env WINEPREFIX="$PREFIX" "$RUNNER_BIN/wineserver" -k
   run env WINEPREFIX="$PREFIX" WINEARCH=win64 WINEDEBUG=-all "$RUNNER_BIN/wineboot" -u
+
+  if [[ ${DRY_RUN:-0} != 1 ]]; then
+    find "$PREFIX" -maxdepth 1 -type f -name '.line-linux-runtime-*' -delete 2>/dev/null || true
+    find "$PREFIX" -maxdepth 1 -type f -name '.line-linux-signing-profile-*' -delete 2>/dev/null || true
+    touch "$marker"
+    export PREFIX_RUNTIME_CHANGED=1
+  fi
+  log "Prefix runtime migration complete"
 }

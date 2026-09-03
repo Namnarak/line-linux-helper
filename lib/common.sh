@@ -4,6 +4,7 @@
 : "${APP_NAME:=line-linux-helper}"
 : "${APP_HOME:=${XDG_DATA_HOME:-$HOME/.local/share}/$APP_NAME}"
 : "${CACHE_HOME:=${XDG_CACHE_HOME:-$HOME/.cache}/$APP_NAME}"
+: "${STATE_HOME:=${XDG_STATE_HOME:-$HOME/.local/state}/$APP_NAME}"
 : "${PREFIX:=$APP_HOME/prefix}"
 : "${RUNTIME_HOME:=$APP_HOME/runtime}"
 : "${RUNNERS_HOME:=$APP_HOME/runners}"
@@ -13,7 +14,11 @@
 : "${DESKTOP_HOME:=${XDG_DATA_HOME:-$HOME/.local/share}/applications}"
 : "${ICON_HOME:=${XDG_DATA_HOME:-$HOME/.local/share}/icons}"
 
-mkdir -p "$CACHE_HOME" "$APP_HOME"
+DISPLAY_BACKEND=${LINE_DISPLAY_BACKEND:-$DISPLAY_BACKEND_DEFAULT}
+GRAPHICS_BACKEND=${LINE_GRAPHICS_BACKEND:-$GRAPHICS_BACKEND_DEFAULT}
+WINED3D_RENDERER=${LINE_WINED3D_RENDERER:-$WINED3D_RENDERER_DEFAULT}
+
+mkdir -p "$CACHE_HOME" "$APP_HOME" "$STATE_HOME"
 
 if [[ -t 1 ]]; then
   C_RESET=$'\033[0m'; C_BOLD=$'\033[1m'; C_GREEN=$'\033[32m'; C_YELLOW=$'\033[33m'; C_RED=$'\033[31m'; C_BLUE=$'\033[34m'
@@ -50,7 +55,7 @@ as_root() {
 sha256_file() { sha256sum "$1" | awk '{print $1}'; }
 
 ensure_dirs() {
-  run mkdir -p "$APP_HOME" "$CACHE_HOME" "$RUNNERS_HOME" "$TOOLS_HOME" "$SIGNING_HOME" "$BIN_HOME" "$DESKTOP_HOME" "$ICON_HOME"
+  run mkdir -p "$APP_HOME" "$CACHE_HOME" "$STATE_HOME" "$RUNNERS_HOME" "$TOOLS_HOME" "$SIGNING_HOME" "$BIN_HOME" "$DESKTOP_HOME" "$ICON_HOME"
 }
 
 is_x86_64() {
@@ -58,6 +63,12 @@ is_x86_64() {
     x86_64|amd64) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+validate_runtime_config() {
+  [[ "$DISPLAY_BACKEND" == xwayland ]] || die "Unsupported display backend: $DISPLAY_BACKEND (v0.3 supports xwayland only)"
+  [[ "$GRAPHICS_BACKEND" == wined3d ]] || die "Unsupported graphics backend: $GRAPHICS_BACKEND (v0.3 supports wined3d only)"
+  [[ "$WINED3D_RENDERER" == gl ]] || die "Unsupported WineD3D renderer: $WINED3D_RENDERER (v0.3 stable profile uses gl)"
 }
 
 wine_env() {
@@ -75,7 +86,6 @@ find_line_launcher() {
 find_line_exe() {
   find "$PREFIX/drive_c/users" -type f -path '*/AppData/Local/LINE/bin/current/LINE.exe' -print -quit 2>/dev/null || true
 }
-
 
 acquire_operation_lock() {
   [[ ${DRY_RUN:-0} == 1 ]] && return 0
@@ -113,14 +123,22 @@ line_version() {
 
 write_helper_state() {
   [[ ${DRY_RUN:-0} == 1 ]] && return 0
-  local version='unknown'
+  local version='unknown' state_file="$STATE_HOME/state.env"
   version=$(line_version 2>/dev/null || true)
-  cat > "$APP_HOME/state.env" <<STATE
+  cat > "$state_file" <<STATE
 helper_version=$HELPER_VERSION
+runtime_family=$RUNTIME_FAMILY
+runner_name=$RUNNER_NAME
 runner_version=$RUNNER_VERSION
+display_backend=$DISPLAY_BACKEND
+graphics_backend=$GRAPHICS_BACKEND
+wined3d_renderer=$WINED3D_RENDERER
+graphics_profile=$GRAPHICS_PROFILE_VERSION
 signing_profile=$SIGNING_PROFILE_VERSION
 font_profile=$FONT_PROFILE_VERSION
 line_version=${version:-unknown}
 updated_at=$(date -Is)
 STATE
+  # Compatibility path for existing tooling that reads the old location.
+  ln -sfn "$state_file" "$APP_HOME/state.env"
 }
