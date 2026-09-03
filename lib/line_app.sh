@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 
-prepare_graphics_env() {
-  if [[ -n ${DISPLAY:-} ]]; then
-    # The tested compatibility profile uses XWayland rather than Wine's native Wayland path.
-    export XDG_SESSION_TYPE=x11
-    unset WAYLAND_DISPLAY || true
-  fi
-}
-
 download_line_installer() {
   if [[ ${DRY_RUN:-0} == 1 ]]; then
     info "Would download LINE directly from: $LINE_INSTALLER_URL"
@@ -49,17 +41,14 @@ install_line() {
   fi
 
   prepare_graphics_env
-  [[ -n ${DISPLAY:-} ]] || die "No graphical DISPLAY is available. Run installation from a desktop session."
-
   download_line_installer
   local installer="$CACHE_HOME/LineInst.exe"
   run cp -f "$installer" "$PREFIX/drive_c/LineInst.exe"
 
   log "Starting the official LINE installer"
   info "LINE itself is installed/downloaded by LINE's own bootstrapper; this project does not bundle it."
-  run env WINEPREFIX="$PREFIX" WINEARCH=win64 WINEDEBUG=-all "$RUNNER_BIN/wine" 'C:\LineInst.exe'
-
-  if [[ ${DRY_RUN:-0} == 1 ]]; then return 0; fi
+  run env WINEPREFIX="$PREFIX" WINEARCH=win64 WINEDEBUG=-all WINE_D3D_CONFIG="$WINE_D3D_CONFIG" \
+    "$RUNNER_BIN/wine" 'C:\LineInst.exe'
 
   local launcher=''
   for _ in $(seq 1 30); do
