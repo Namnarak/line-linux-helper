@@ -123,9 +123,9 @@ line_version() {
 
 write_helper_state() {
   [[ ${DRY_RUN:-0} == 1 ]] && return 0
-  local version='unknown'
+  local version='unknown' state_file="$STATE_HOME/state.env"
   version=$(line_version 2>/dev/null || true)
-  cat > "$APP_HOME/state.env" <<STATE
+  cat > "$state_file" <<STATE
 helper_version=$HELPER_VERSION
 runtime_family=$RUNTIME_FAMILY
 runner_name=$RUNNER_NAME
@@ -139,4 +139,6 @@ font_profile=$FONT_PROFILE_VERSION
 line_version=${version:-unknown}
 updated_at=$(date -Is)
 STATE
+  # Compatibility path for existing tooling that reads the old location.
+  ln -sfn "$state_file" "$APP_HOME/state.env"
 }
