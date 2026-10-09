@@ -229,3 +229,19 @@ LINE and related names, logos, and trademarks belong to their respective owners.
 ## License
 
 The helper code in this repository is released under the [MIT License](LICENSE). That license applies **only to this project's code**, not to LINE, Wine, Kron4ek Wine-Builds, Winetricks, or any software downloaded at runtime.
+
+---
+
+<!-- CYTECH_STAR_HISTORY:START -->
+
+## Star History
+
+<a href="https://star-history.dera.page/#Namnarak/line-linux-helper&type=date&legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=Namnarak/line-linux-helper&type=date&legend=top-left&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=Namnarak/line-linux-helper&type=date&legend=top-left" />
+    <img alt="GitHub star history for Namnarak/line-linux-helper" src="https://star-history.dera.page/svg?repos=Namnarak/line-linux-helper&type=date&legend=top-left" width="800" />
+  </picture>
+</a>
+
+<!-- CYTECH_STAR_HISTORY:END -->
