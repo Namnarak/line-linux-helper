@@ -1,4 +1,18 @@
-# LINE Linux Helper
+<!-- CYTECH_README_REFRESH:START -->
+<div align="center">
+
+<a href="https://github.com/Namnarak/line-linux-helper"><img width="100%" alt="LINE Linux Helper banner" src="https://capsule-render.vercel.app/api?type=waving&color=0:10231C,100:16A34A&height=210&section=header&text=LINE%20Linux%20Helper&fontSize=43&fontColor=ffffff&fontAlignY=36&desc=Community%20compatibility%20setup%20for%20LINE%20on%20Wine&descAlignY=59&descSize=16"></a>
+
+<img alt="PROJECT: Linux Utility" src="https://img.shields.io/badge/PROJECT-Linux%20Utility-16A34A?style=flat-square&labelColor=10231C"> <img alt="STACK: Shell · Wine" src="https://img.shields.io/badge/STACK-Shell%20%C2%B7%20Wine-16A34A?style=flat-square&labelColor=10231C">
+
+<p><strong>Community compatibility setup for LINE on Wine</strong></p>
+
+<a href="https://github.com/Namnarak/line-linux-helper/releases">Releases</a> · <a href="https://github.com/Namnarak/line-linux-helper/issues">Issues</a> · <a href="https://github.com/Namnarak/line-linux-helper">Source</a>
+
+</div>
+<!-- CYTECH_README_REFRESH:END -->
+
+---
 
 Unofficial community setup helper for running the **official Windows edition of LINE** on Linux through Wine.
 
