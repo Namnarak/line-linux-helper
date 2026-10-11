@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-08-26
+
+- Make the one-command bootstrap the primary installation path in the documentation.
+- Run a post-install health check automatically.
+- Launch LINE automatically after a successful interactive desktop installation.
+- Add `--no-launch` for setup-only and scripted/headless workflows.
+- Preserve the existing isolated-prefix, official-CDN, and no-bundled-binaries security model.
+
 ## 0.2.1 — 2026-08-23
 
 - Fix CI ShellCheck annotations in the new logic test.
