@@ -236,12 +236,14 @@ The helper code in this repository is released under the [MIT License](LICENSE).
 
 ## Star History
 
-<a href="https://star-history.dera.page/#Namnarak/line-linux-helper&type=date&legend=top-left">
+<a href="https://github.com/Namnarak/line-linux-helper/stargazers">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=Namnarak/line-linux-helper&type=date&legend=top-left&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=Namnarak/line-linux-helper&type=date&legend=top-left" />
-    <img alt="GitHub star history for Namnarak/line-linux-helper" src="https://star-history.dera.page/svg?repos=Namnarak/line-linux-helper&type=date&legend=top-left" width="800" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Namnarak/line-linux-helper/refs/heads/main/assets/star-history-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Namnarak/line-linux-helper/refs/heads/main/assets/star-history-light.svg" />
+    <img alt="Star history for Namnarak/line-linux-helper" src="https://raw.githubusercontent.com/Namnarak/line-linux-helper/refs/heads/main/assets/star-history-light.svg" width="1100" />
   </picture>
 </a>
+
+<sub>Updated automatically from GitHub's dated stargazers. Only currently starred accounts are included.</sub>
 
 <!-- CYTECH_STAR_HISTORY:END -->
