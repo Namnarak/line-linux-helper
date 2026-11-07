@@ -31,7 +31,7 @@ usage() {
 line-linux-helper — unofficial LINE-on-Linux setup helper
 
 Usage:
-  line-linux install [--dry-run] [--no-packages] [--no-desktop] [--prefix PATH]
+  line-linux install [--dry-run] [--no-packages] [--no-desktop] [--no-launch] [--prefix PATH]
   line-linux launch [--prefix PATH]
   line-linux update [--prefix PATH]
   line-linux repair [--fonts] [--no-packages] [--prefix PATH]
@@ -40,6 +40,10 @@ Usage:
   line-linux uninstall [--yes]
   line-linux disclaimer
   line-linux version
+
+Install is intentionally automatic: it prepares dependencies, the isolated
+Wine environment, LINE, desktop integration, runs a health check, and launches
+LINE when successful. Pass --no-launch if you only want setup.
 
 This project is NOT an official LINE installer and is not affiliated with
 LY Corporation or LINE. It does not bundle, redistribute, decode, decompile,
@@ -78,6 +82,7 @@ parse_common_flags() {
       --dry-run) DRY_RUN=1 ;;
       --no-packages) NO_PACKAGES=1 ;;
       --no-desktop) NO_DESKTOP=1 ;;
+      --no-launch) NO_LAUNCH=1 ;;
       --prefix)
         shift
         (($#)) || die "--prefix requires a path"
@@ -117,8 +122,30 @@ cmd_install() {
   write_helper_state
   printf '\n'
   log "Installation complete"
-  info "Launch with: line-linux launch"
-  info "Check health with: line-linux doctor"
+
+  if [[ ${DRY_RUN:-0} == 1 ]]; then
+    info "Dry run complete; no launch attempted"
+    return 0
+  fi
+
+  printf '\n'
+  info "Running post-install health check..."
+  if doctor_line; then
+    log "Post-install health check passed"
+  else
+    warn "Post-install health check found issues. You can rerun: line-linux doctor"
+  fi
+
+  if [[ ${NO_LAUNCH:-0} == 1 ]]; then
+    info "Automatic launch skipped (--no-launch)"
+    info "Launch later with: line-linux launch"
+    return 0
+  fi
+
+  printf '\n'
+  log "Starting LINE..."
+  release_operation_lock
+  launch_line
 }
 
 cmd_repair() {
@@ -179,6 +206,7 @@ shift || true
 DRY_RUN=0
 NO_PACKAGES=0
 NO_DESKTOP=0
+NO_LAUNCH=0
 ASSUME_YES=0
 FONTS_ONLY=0
 parse_common_flags "$@"

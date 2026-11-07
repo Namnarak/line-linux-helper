@@ -8,7 +8,33 @@
 >
 > ตอนติดตั้ง helper จะดาวน์โหลด Windows bootstrap installer จาก **CDN ทางการของ LINE (`desktop.line-scdn.net`) โดยตรง** แล้วให้ installer ของ LINE จัดการตัวแอปเอง
 
-## ติดตั้ง
+## ติดตั้ง — คำสั่งเดียว
+
+เปิด Terminal ใน Desktop session แล้วรันแค่นี้:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Namnarak/line-linux-helper/main/bootstrap.sh | bash
+```
+
+ตัว helper จะจัดการให้อัตโนมัติเท่าที่ distro รองรับ:
+
+1. ตรวจ distro และ architecture
+2. ติดตั้ง dependency ที่จำเป็น
+3. ดาวน์โหลดและตรวจ SHA-256 ของ Wine runner
+4. สร้าง Wine prefix แยกสำหรับ LINE
+5. ตั้งค่าฟอนต์และ compatibility signature
+6. ดาวน์โหลด LINE จาก CDN ทางการของ LINE
+7. ติดตั้ง desktop launcher
+8. รัน health check
+9. เปิด LINE ให้อัตโนมัติ
+
+ถ้าต้องการติดตั้งอย่างเดียวแต่ยังไม่เปิด LINE:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Namnarak/line-linux-helper/main/bootstrap.sh | bash -s -- --no-launch
+```
+
+หรือถ้าต้องการ clone source มาตรวจก่อน:
 
 ```bash
 git clone https://github.com/Namnarak/line-linux-helper.git
@@ -16,13 +42,7 @@ cd line-linux-helper
 ./install.sh
 ```
 
-หรือแบบคำสั่งเดียว (โหลดเฉพาะ source ของ helper จาก GitHub ส่วน LINE ยังโหลดตรงจาก CDN ของ LINE):
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/Namnarak/line-linux-helper/main/bootstrap.sh)
-```
-
-หลังติดตั้ง:
+หลังติดตั้งยังใช้คำสั่งเหล่านี้ได้ตามปกติ:
 
 ```bash
 line-linux launch
@@ -40,7 +60,7 @@ File: C:\windows\system32\CRYPT32.dll
 Reason: NO_SIGNATURE
 ```
 
-helper จะสร้าง Wine prefix แยกสำหรับ LINE โดยเฉพาะ แล้วใส่ Authenticode self-signature ให้ DLL ของ Wine ภายใน prefix นั้น
+helper จะสร้าง Wine prefix แยกสำหรับ LINE โดยเฉพาะ แล้วใส่ Authenticode self-signature ให้ DLL ของ Wineภายใน prefix นั้น
 
 Certificate ที่สร้างขึ้น **เป็น self-signed certificate ที่เครื่องผู้ใช้สร้างเอง ไม่ได้ออกโดย Microsoft** ถึงแม้ metadata ของ certificate จะตั้งให้เข้ากับ workaround ปัจจุบันก็ตาม
 
@@ -92,7 +112,6 @@ line-linux uninstall
 ## Disclaimer สั้นสำหรับแชร์โพสต์
 
 > LINE Linux Helper เป็น community compatibility/setup helper ที่ไม่เป็นทางการ ไม่ได้เป็นผลิตภัณฑ์หรือ installer ของ LINE/LY Corporation และไม่มีการ bundle, mirror, decode, decompile, reverse-engineer หรือ patch ตัว LINE โปรแกรมจะดาวน์โหลด LINE Windows Installer จาก CDN ทางการของ LINE โดยตรงขณะติดตั้ง ส่วน workaround ทั้งหมดทำเฉพาะใน Wine prefix แยกของผู้ใช้
-
 
 ## แก้ฟอนต์/การเรนเดอร์ตัวอักษร
 
